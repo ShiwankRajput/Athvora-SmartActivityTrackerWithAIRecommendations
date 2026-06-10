@@ -3,19 +3,27 @@ package com.shivnexEngineering.FitnessTrackerApplication.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
 import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class JwtUtils {
 
-    private static final String SECRET_KEY = "QI1IooKyEil32Bo2AweuPdTfFTzlG5oIwJXg6W9dJJd";
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
     private static final long EXPIRATION_TIME = 1000*60*60*24; 
-    private static SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    private SecretKey key;
+
+    @PostConstruct
+    public void init(){
+        key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    }
 
     public String generateToken(String userId, String role) {
 
