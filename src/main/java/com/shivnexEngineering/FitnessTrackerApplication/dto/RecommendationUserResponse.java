@@ -1,0 +1,15 @@
+package com.shivnexEngineering.FitnessTrackerApplication.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class RecommendationUserResponse {
+
+    private String firstName;
+    private String lastName;
+
+}
