@@ -16,15 +16,18 @@ import com.shivnexEngineering.FitnessTrackerApplication.repository.Recommendatio
 import com.shivnexEngineering.FitnessTrackerApplication.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RecommendationService {
 
     private final RecommendationRepository recommendationRepository;
     private final UserRepository userRepository;
     private final ActivityRepository activityRepository;
     private final RecommendationMapper recommendationMapper;
+    private final RedisService redisService;
 
     public RecommendationResponse getGeneratedRecommendation(RecommendationRequest request, String userId,
         String activity_id
@@ -44,10 +47,13 @@ public class RecommendationService {
             .safety(request.getSafety())
             .build();
 
-        recommendationRepository.save(recommendation);    
+        Recommendation savedRecommendation = recommendationRepository.save(recommendation);    
 
         RecommendationResponse recommendationResponse
-            = recommendationMapper.mapToRecommendationResponse(recommendation); 
+            = recommendationMapper.mapToRecommendationResponse(savedRecommendation); 
+
+        redisService.delete("user_recommendations:" + userId);  
+        redisService.delete("activity_recommendations:" + activity_id);  
             
         return recommendationResponse;    
 
@@ -55,25 +61,53 @@ public class RecommendationService {
 
     public List<RecommendationResponse> getRecommendationByUserId(String userId){
 
+        String cacheKey = "user_recommendations:" + userId;
+
+        Object cacheData = redisService.get(cacheKey);
+
+        if(cacheData != null){
+            log.info("Fetching recommendations from Redis");
+            return (List<RecommendationResponse>) cacheData;
+        }
+
+        log.info("Fetching recommendations from DB");
         userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("Cannot find User by id -> " + userId));
 
         List<Recommendation> recommendation = recommendationRepository.findByUserId(userId);
 
-        return recommendation.stream()
+        List<RecommendationResponse> recommendationResponses = recommendation.stream()
             .map(recommendationMapper::mapToRecommendationResponse).collect(Collectors.toList());
+
+        redisService.save(cacheKey, recommendationResponses, 20);
+        
+        return recommendationResponses;
 
     }
 
     public List<RecommendationResponse> getRecommendationByActivityId(String activityId){
 
+        String cacheKey = "activity_recommendations:" + activityId;
+
+        Object cacheData = redisService.get(cacheKey);
+
+        if(cacheData != null){
+            System.out.println("fetching from Redis");
+            return (List<RecommendationResponse>) cacheData;
+        }
+
+        System.out.println("Fetching from DB");
         activityRepository.findById(activityId)
             .orElseThrow(() -> new RuntimeException("Cannot find Activity by id -> " + activityId));
 
         List<Recommendation> recommendations = recommendationRepository.findByActivityId(activityId);
         
-        return recommendations.stream()
+        List<RecommendationResponse> recommendationResponses = recommendations.stream()
             .map(recommendationMapper::mapToRecommendationResponse).collect(Collectors.toList());
+
+        redisService.save(cacheKey, recommendationResponses, 20);
+
+        return recommendationResponses;    
 
     }
 
