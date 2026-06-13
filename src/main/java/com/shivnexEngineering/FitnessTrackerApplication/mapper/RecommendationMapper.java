@@ -21,6 +21,7 @@ public class RecommendationMapper {
         recommendationResponse.setId(recommendation.getId());
         recommendationResponse.setType(recommendation.getType());
         recommendationResponse.setUser(user);
+        recommendationResponse.setSuggestions(recommendation.getSuggestions());
         recommendationResponse.setActivity(recommendation.getActivity());
         recommendationResponse.setImprovements(recommendation.getImprovements());
         recommendationResponse.setRecommendation(recommendation.getRecommendation());

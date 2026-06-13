@@ -28,12 +28,12 @@ public class RecommendationController {
 
     // Generate Recommendation
     @PostMapping("/generate/{activity_id}")
-    public ResponseEntity<RecommendationResponse> generateRecommendation(@RequestBody RecommendationRequest request,
-        Authentication authentication, @PathVariable String activity_id
+    public ResponseEntity<RecommendationResponse> generateRecommendation(Authentication authentication, 
+        @PathVariable String activity_id
     ){
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        RecommendationResponse recommendationResponse = recommendationService.getGeneratedRecommendation(request, 
+        RecommendationResponse recommendationResponse = recommendationService.getGeneratedRecommendation( 
             customUserDetails.getId(), activity_id
         );
 

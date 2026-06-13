@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.shivnexEngineering.FitnessTrackerApplication.dto.RecommendationRequest;
+import com.shivnexEngineering.FitnessTrackerApplication.dto.GeminiRecommendationResponse;
 import com.shivnexEngineering.FitnessTrackerApplication.dto.RecommendationResponse;
 import com.shivnexEngineering.FitnessTrackerApplication.entity.Activity;
 import com.shivnexEngineering.FitnessTrackerApplication.entity.Recommendation;
@@ -28,23 +28,27 @@ public class RecommendationService {
     private final ActivityRepository activityRepository;
     private final RecommendationMapper recommendationMapper;
     private final RedisService redisService;
+    private final GeminiService geminiService;
 
-    public RecommendationResponse getGeneratedRecommendation(RecommendationRequest request, String userId,
-        String activity_id
-    ){
+    public RecommendationResponse getGeneratedRecommendation(String userId,String activity_id){
         
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("Cannot found User by id -> " + userId));
 
         Activity activity = activityRepository.findById(activity_id)
             .orElseThrow(() -> new RuntimeException("Cannot found Activity by id -> " + activity_id));
+
+        GeminiRecommendationResponse geminiRecommendationResponse = geminiService
+            .generateRecommendation(activity);    
           
         Recommendation recommendation = Recommendation.builder()
             .user(user)
             .activity(activity)
-            .improvements(request.getImprovements())
-            .suggestions(request.getSuggestions())
-            .safety(request.getSafety())
+            .type(activity.getType().name())
+            .recommendation(geminiRecommendationResponse.getRecommendation())
+            .improvements(geminiRecommendationResponse.getImprovements())
+            .suggestions(geminiRecommendationResponse.getSuggestions())
+            .safety(geminiRecommendationResponse.getSafety())
             .build();
 
         Recommendation savedRecommendation = recommendationRepository.save(recommendation);    
