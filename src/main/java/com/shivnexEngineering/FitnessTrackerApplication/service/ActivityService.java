@@ -5,10 +5,13 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.shivnexEngineering.FitnessTrackerApplication.dto.ActivityRequest;
 import com.shivnexEngineering.FitnessTrackerApplication.dto.ActivityResponse;
 import com.shivnexEngineering.FitnessTrackerApplication.entity.Activity;
 import com.shivnexEngineering.FitnessTrackerApplication.entity.User;
+import com.shivnexEngineering.FitnessTrackerApplication.exception.ResourceNotFoundException;
+import com.shivnexEngineering.FitnessTrackerApplication.exception.UserNotFoundException;
 import com.shivnexEngineering.FitnessTrackerApplication.mapper.ActivityMapper;
 import com.shivnexEngineering.FitnessTrackerApplication.repository.ActivityRepository;
 import com.shivnexEngineering.FitnessTrackerApplication.repository.UserRepository;
@@ -36,7 +39,7 @@ public class ActivityService {
     public ActivityResponse createActivity(ActivityRequest activityRequest, String userId){
 
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("Cannot found user by user id"));
+            .orElseThrow(() -> new UserNotFoundException("User Not found"));
 
         Activity activity = Activity.builder()
             .user(user)
@@ -50,7 +53,7 @@ public class ActivityService {
         Activity savedActivity = activityRepository.save(activity);
         ActivityResponse activityResponse = activityMapper.mapToActivityResponse(savedActivity);
 
-        redisService.delete("cacheKey:" + userId);
+        redisService.delete("activities:" + userId);
 
         return activityResponse;
 
@@ -60,11 +63,12 @@ public class ActivityService {
 
         String cacheKey = "activities:" + userId;
 
-        Object cacheData = redisService.get(cacheKey);
+        List<ActivityResponse> cacheData = redisService.get(cacheKey, 
+            new TypeReference<List<ActivityResponse>>(){});
 
         if(cacheData != null){
             log.info("Fetching activities from Redis");
-            return (List<ActivityResponse>) cacheData;
+            return cacheData;
         }
 
         log.info("Fetching activities from DB");
@@ -74,9 +78,68 @@ public class ActivityService {
             .map(activityMapper::mapToActivityResponse)
             .collect(Collectors.toList());   
                 
-        redisService.save(cacheKey, activityResponses, 15);    
+        redisService.save(cacheKey, activityResponses, 30);    
 
         return activityResponses;
+
+    }
+
+    public ActivityResponse getSpecificActivityByActivityId(String activityId, String userId){
+
+        String cacheKey = "activity:" + activityId;
+
+        ActivityResponse cacheData = redisService.get(cacheKey, ActivityResponse.class);
+
+        if(cacheData != null){
+            log.info("Fetching activity from Redis");
+            return cacheData;
+        }
+
+        log.info("Fetching Activity from DB");
+        Activity savedActivity = activityRepository.findByIdAndUserId(activityId, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Activity not found"));
+
+        ActivityResponse activityResponse = activityMapper.mapToActivityResponse(savedActivity);
+
+        redisService.save(cacheKey, activityResponse, 30);
+
+        return activityResponse;
+
+    }
+
+    public void deleteSpecificActivityByActitvityId(String activityId, String userId){
+
+        Activity activity = activityRepository
+            .findByIdAndUserId(activityId, userId)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Activity not found"));
+
+        activityRepository.delete(activity);
+
+        redisService.delete("activities:" + userId);
+        redisService.delete("activity:" + activityId);
+
+    }
+
+    public ActivityResponse updateSpecActivityByActivityId(ActivityRequest activityRequest, 
+        String activityId, String userId
+    ){
+
+        Activity savedActivity = activityRepository.findByIdAndUserId(activityId, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Actitvity not found"));
+
+        savedActivity.setType(activityRequest.getType());
+        savedActivity.setAdditionalMetrics(activityRequest.getAdditionalMetrics());
+        savedActivity.setDuration(activityRequest.getDuration());
+        savedActivity.setCaloriesBurned(activityRequest.getCaloriesBurned());
+        savedActivity.setStartTime(activityRequest.getStartTime());
+
+        Activity updatedActivity = activityRepository.save(savedActivity);
+
+        redisService.delete("activities:" + userId);
+        redisService.delete("activity:" + activityId);
+
+        return activityMapper.mapToActivityResponse(updatedActivity);
 
     }
 

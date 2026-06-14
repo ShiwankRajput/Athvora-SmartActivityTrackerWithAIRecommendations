@@ -9,12 +9,20 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Configuration
 public class RedisConfig {
+
+    private ObjectMapper objectMapper;    
+
+    public RedisConfig(ObjectMapper objectMapper){
+        this.objectMapper = objectMapper;
+    }
 
     // Generally use by manual set and get method for setting and getting the keys in - Default Rediervice class
     @Bean
@@ -24,7 +32,7 @@ public class RedisConfig {
         redisTemplate.setConnectionFactory(redisConnectionFactory);
 
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new JacksonJsonRedisSerializer<>(Object.class));
+        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper));
 
         return redisTemplate;
 
@@ -48,7 +56,7 @@ public class RedisConfig {
                             RedisSerializationContext
                                     .SerializationPair
                                     .fromSerializer(
-                                            new JacksonJsonRedisSerializer<>(Object.class)
+                                            new GenericJackson2JsonRedisSerializer(objectMapper)
                                     )
                     );
 

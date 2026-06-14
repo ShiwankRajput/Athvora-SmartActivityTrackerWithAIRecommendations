@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.shivnexEngineering.FitnessTrackerApplication.dto.GeminiRecommendationResponse;
 import com.shivnexEngineering.FitnessTrackerApplication.dto.RecommendationResponse;
 import com.shivnexEngineering.FitnessTrackerApplication.entity.Activity;
@@ -67,11 +68,13 @@ public class RecommendationService {
 
         String cacheKey = "user_recommendations:" + userId;
 
-        Object cacheData = redisService.get(cacheKey);
+        List<RecommendationResponse> cacheData = redisService.get(cacheKey,
+            new TypeReference<List<RecommendationResponse>>(){}
+        );
 
         if(cacheData != null){
             log.info("Fetching recommendations from Redis");
-            return (List<RecommendationResponse>) cacheData;
+            return cacheData;
         }
 
         log.info("Fetching recommendations from DB");
@@ -93,7 +96,9 @@ public class RecommendationService {
 
         String cacheKey = "activity_recommendations:" + activityId;
 
-        Object cacheData = redisService.get(cacheKey);
+        List<RecommendationResponse> cacheData = redisService.get(cacheKey,
+            new TypeReference<List<RecommendationResponse>>(){}
+        );
 
         if(cacheData != null){
             System.out.println("fetching from Redis");

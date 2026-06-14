@@ -1,0 +1,9 @@
+package com.shivnexEngineering.FitnessTrackerApplication.exception;
+
+public class UserNotFoundException extends RuntimeException{
+
+    public UserNotFoundException(String message){
+        super(message);
+    }
+
+}
