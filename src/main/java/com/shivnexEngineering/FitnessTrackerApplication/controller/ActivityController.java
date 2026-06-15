@@ -18,6 +18,8 @@ import com.shivnexEngineering.FitnessTrackerApplication.dto.ActivityResponse;
 import com.shivnexEngineering.FitnessTrackerApplication.security.CustomUserDetails;
 import com.shivnexEngineering.FitnessTrackerApplication.service.ActivityService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/users")
 public class ActivityController {
@@ -30,7 +32,7 @@ public class ActivityController {
 
     // Saves Activity
     @PostMapping("/activity")
-    public ResponseEntity<ActivityResponse> addActivity(@RequestBody ActivityRequest activityRequest,
+    public ResponseEntity<ActivityResponse> addActivity(@Valid @RequestBody ActivityRequest activityRequest,
         Authentication authentication
     ){
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -62,7 +64,7 @@ public class ActivityController {
 
     // Update Specific activity - by activityId
     @PutMapping("/activity/{activityId}")
-    public ResponseEntity<ActivityResponse> updateSpecificActivity(@RequestBody ActivityRequest activityRequest,
+    public ResponseEntity<ActivityResponse> updateSpecificActivity(@Valid @RequestBody ActivityRequest activityRequest,
          @PathVariable String activityId, Authentication authentication
     ){
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();

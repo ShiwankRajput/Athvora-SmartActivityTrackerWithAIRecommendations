@@ -1,14 +1,18 @@
 package com.shivnexEngineering.FitnessTrackerApplication.exception;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.catalina.connector.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.shivnexEngineering.FitnessTrackerApplication.dto.ErrorResponse;
+import com.shivnexEngineering.FitnessTrackerApplication.dto.ValidationErrorResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -54,6 +58,31 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 request.getRequestURI()
             ));
+
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ValidationErrorResponse> handleAllException(MethodArgumentNotValidException ex, 
+        HttpServletRequest request){
+
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getBindingResult()
+            .getFieldErrors()
+            .forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+            );
+
+        ValidationErrorResponse validationErrorResponse = new ValidationErrorResponse(
+            LocalDateTime.now(), 
+            HttpStatus.BAD_REQUEST.value(), 
+            "Validation Error",
+            request.getRequestURI(),
+            errors
+        );    
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(validationErrorResponse);
 
     }
 

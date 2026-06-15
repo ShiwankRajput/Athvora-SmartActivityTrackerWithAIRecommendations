@@ -6,6 +6,8 @@ import com.shivnexEngineering.FitnessTrackerApplication.dto.RegisterRequest;
 import com.shivnexEngineering.FitnessTrackerApplication.dto.UserResponse;
 import com.shivnexEngineering.FitnessTrackerApplication.service.UserService;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,13 +26,13 @@ public class AuthController {
 
     // Register a new User
     @PostMapping("/auth/register")
-    public ResponseEntity<UserResponse> registerUser(@RequestBody RegisterRequest registerRequest){
+    public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody RegisterRequest registerRequest){
         return ResponseEntity.ok(userService.register(registerRequest));
     }
 
     // Login a User
     @PostMapping("/auth/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest){
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest){
         return ResponseEntity.ok(userService.loginUser(loginRequest));
     }
 
